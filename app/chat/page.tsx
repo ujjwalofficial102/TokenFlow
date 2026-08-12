@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/common/navbar';
 import { ChatBox } from '@/components/chat/chat-box';
 import { SystemMetrics, ChatMessage } from '@/types';
@@ -19,28 +20,40 @@ export default function ChatPage() {
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics>(initialMetrics);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const { user, loading } = useAuth();
+  const router = useRouter();
 
+  // Strict Authentication & User-Isolated Analytics Fetcher
   useEffect(() => {
-    fetch('/api/analytics')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && typeof data === 'object') {
-          setSystemMetrics(data);
-        }
-      })
-      .catch((err) => console.warn('Failed to load metrics:', err));
-  }, []);
+    if (!loading && !user) {
+      setSystemMetrics(initialMetrics);
+      setMessages([]);
+      router.replace('/login');
+      return;
+    }
+
+    if (user?.uid) {
+      const url = `/api/analytics?userId=${encodeURIComponent(user.uid)}`;
+      fetch(url)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && typeof data === 'object') {
+            setSystemMetrics(data);
+          }
+        })
+        .catch((err) => console.warn('Failed to load user metrics:', err));
+    }
+  }, [user?.uid, loading, user, router]);
 
   const handleClearChat = () => {
     setMessages([]);
   };
 
-  if (loading) {
+  if (loading || !user) {
     return (
       <div className="min-h-screen w-full bg-slate-950 flex items-center justify-center text-slate-400 text-sm">
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
-          <span>Loading TokenFlow Middleware...</span>
+        <div className="flex items-center gap-3">
+          <span className="w-3.5 h-3.5 rounded-full bg-emerald-400 animate-ping"></span>
+          <span className="font-medium text-slate-300">Authenticating TokenFlow Session...</span>
         </div>
       </div>
     );

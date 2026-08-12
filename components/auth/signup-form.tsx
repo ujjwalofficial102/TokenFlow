@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signInWithGoogle, signUpWithEmail } from '@/lib/firebase/auth';
 import { useAuth } from './auth-provider';
-import { UserPlus, Sparkles, AlertCircle, ShieldCheck, ArrowRight } from 'lucide-react';
+import { UserPlus, Sparkles, AlertCircle } from 'lucide-react';
 
 export function SignupForm() {
   const [name, setName] = useState('');
@@ -16,7 +16,14 @@ export function SignupForm() {
   const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
-  const { continueAsGuest } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace('/chat');
+    }
+  }, [user, authLoading, router]);
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,10 +61,13 @@ export function SignupForm() {
     }
   };
 
-  const handleDemoGuestLogin = () => {
-    continueAsGuest();
-    router.push('/chat');
-  };
+  if (authLoading || user) {
+    return (
+      <div className="w-full max-w-md p-8 rounded-2xl bg-slate-900/80 border border-slate-800 text-center text-slate-400 text-sm">
+        Authenticating session...
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-md p-8 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-xl shadow-2xl shadow-emerald-500/5 transition-all">
@@ -160,17 +170,6 @@ export function SignupForm() {
           <span>{loading ? 'Creating Account...' : 'Create Account'}</span>
         </button>
       </form>
-
-      {/* Guest Mode fallback */}
-      <div className="mt-4 pt-4 border-t border-slate-800/60 text-center">
-        <button
-          type="button"
-          onClick={handleDemoGuestLogin}
-          className="text-xs text-slate-400 hover:text-emerald-400 inline-flex items-center gap-1.5 font-medium transition-colors"
-        >
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Explore Demo Mode without signing in <ArrowRight className="w-3 h-3" />
-        </button>
-      </div>
 
       {/* Switch to Login */}
       <p className="text-center text-xs text-slate-400 mt-6">

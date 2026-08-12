@@ -30,11 +30,11 @@ interface VectorSearchResult {
 
 /**
  * Searches vector store for a semantically similar response matching the query embedding.
- * Default similarity threshold set to 0.70 (70%) for semantic search retrieval.
+ * Default similarity threshold set to 0.90 (90%) for high-precision semantic search retrieval.
  */
 export async function searchSemanticKnowledge(
   queryPrompt: string,
-  similarityThreshold = 0.70
+  similarityThreshold = 0.90
 ): Promise<VectorSearchResult> {
   if (!queryPrompt) return { match: null, similarity: 0 };
 
@@ -52,7 +52,7 @@ export async function searchSemanticKnowledge(
       if (queryResponse.matches && queryResponse.matches.length > 0) {
         const topMatch = queryResponse.matches[0];
         const score = topMatch.score || 0;
-        console.log(`[Pinecone Search] Query: "${queryPrompt}" | Top Match Score: ${(score * 100).toFixed(1)}% | Threshold: ${similarityThreshold * 100}%`);
+        console.log(`[Pinecone Search] Query: "${queryPrompt}" | Top Match Score: ${(score * 100).toFixed(1)}% | Threshold: ${(similarityThreshold * 100).toFixed(1)}%`);
 
         if (score >= similarityThreshold && topMatch.metadata) {
           const record: KnowledgeRecord = {
@@ -91,7 +91,7 @@ export async function searchSemanticKnowledge(
     }
   }
 
-  console.log(`[Memory Vector Store] Query: "${queryPrompt}" | Score: ${(highestSimilarity * 100).toFixed(1)}% | Threshold: ${similarityThreshold * 100}%`);
+  console.log(`[Memory Vector Store] Query: "${queryPrompt}" | Score: ${(highestSimilarity * 100).toFixed(1)}% | Threshold: ${(similarityThreshold * 100).toFixed(1)}%`);
 
   if (highestSimilarity >= similarityThreshold && bestMatch) {
     bestMatch.timesRetrieved += 1;
@@ -104,7 +104,7 @@ export async function searchSemanticKnowledge(
 
 /**
  * Stores a high quality LLM response in Vector DB following TokenFlow Intelligent Rules:
- * Rule 1: Only store if responseTokens >= 100 (or explicit quality check)
+ * Rule 1: Only store if responseTokens >= 50
  * Rule 2: Prevent duplicates: Skip insertion if duplicate exists with similarity > 0.95
  */
 export async function storeKnowledgeIfEligible(
@@ -113,7 +113,7 @@ export async function storeKnowledgeIfEligible(
   normalizedPrompt: string,
   response: string,
   responseTokens: number,
-  minTokensThreshold = 50 // relaxed threshold for demo responsiveness
+  minTokensThreshold = 50
 ): Promise<{ stored: boolean; reason?: string }> {
   // Quality Check 1: Must meet token threshold
   if (responseTokens < minTokensThreshold) {

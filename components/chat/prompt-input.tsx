@@ -38,7 +38,7 @@ export function PromptInput({ onSend, loading }: PromptInputProps) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask TokenFlow AI... (e.g. 'What is MERN Stack?' or 'Explain MERN Stack in detail')"
+          placeholder="Ask TokenFlow AI…"
           rows={3}
           disabled={loading}
           className="w-full bg-transparent px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none resize-none"
